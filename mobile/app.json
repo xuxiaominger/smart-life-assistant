@@ -24,15 +24,11 @@
       "package": "com.smartlife.assistant"
     },
     "web": {
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
     },
     "plugins": [
-      [
-        "expo-splash-screen",
-        {
-          "backgroundColor": "#F5F5F7"
-        }
-      ]
+      "expo-asset"
     ]
   }
 }
