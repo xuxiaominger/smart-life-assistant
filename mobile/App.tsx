@@ -62,6 +62,7 @@ const mockTransactions = [
 ];
 
 const modules = [
+  { id: 'wechat', name: '微信监控', color: '#07C160', emoji: '💬' },
   { id: 'document', name: '文档整理', color: '#007AFF', emoji: '📄' },
   { id: 'call', name: '通话录音', color: '#34C759', emoji: '📞' },
   { id: 'footprint', name: '足迹记录', color: '#AF52DE', emoji: '📍' },
@@ -296,12 +297,125 @@ function MoodScreen() {
   );
 }
 
+// 微信自动化模块
+function WeChatScreen() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+
+  const mockGroups = [
+    { id: 1, name: '项目交流群', newFiles: 3, lastActive: '10分钟前' },
+    { id: 2, name: '法律资源共享', newFiles: 5, lastActive: '30分钟前' },
+    { id: 3, name: '同事群', newFiles: 1, lastActive: '1小时前' },
+    { id: 4, name: '客户沟通群', newFiles: 2, lastActive: '2小时前' },
+  ];
+
+  const mockFiles = [
+    { id: 1, group: '项目交流群', name: '需求文档.pdf', size: '2.3MB', time: '今天 10:30' },
+    { id: 2, group: '法律资源共享', name: '案例分析.zip', size: '15MB', time: '今天 10:15' },
+    { id: 3, group: '项目交流群', name: '设计稿.png', size: '3.2MB', time: '今天 09:45' },
+  ];
+
+  const handleToggle = () => {
+    if (isRunning) {
+      setIsRunning(false);
+      setProgress(0);
+    } else {
+      setIsRunning(true);
+      // 模拟进度
+      const interval = setInterval(() => {
+        setProgress((p) => {
+          if (p >= 100) {
+            clearInterval(interval);
+            return 100;
+          }
+          return p + 10;
+        });
+      }, 500);
+    }
+  };
+
+  return (
+    <ScrollView style={styles.screen}>
+      <View style={styles.card}>
+        <Text style={styles.cardTitle}>微信群监控</Text>
+        <View style={styles.statusRow}>
+          <View style={[styles.statusDot, { backgroundColor: isRunning ? '#34C759' : '#C7C7CC' }]} />
+          <Text style={styles.statusText}>{isRunning ? '监控中' : '已停止'}</Text>
+        </View>
+      </View>
+
+      {/* 控制按钮 */}
+      <View style={styles.controlPanel}>
+        <TouchableOpacity
+          style={[styles.controlBtn, { backgroundColor: isRunning ? '#FF3B30' : '#34C759' }]}
+          onPress={handleToggle}
+        >
+          <Text style={styles.controlBtnText}>{isRunning ? '⏹ 停止监控' : '▶ 开始监控'}</Text>
+        </TouchableOpacity>
+        <View style={styles.progressContainer}>
+          <View style={styles.progressBar}>
+            <View style={[styles.progressFill, { width: `${progress}%` }]} />
+          </View>
+          <Text style={styles.progressText}>{progress}%</Text>
+        </View>
+      </View>
+
+      {/* 监控群列表 */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>监控群列表 ({mockGroups.length})</Text>
+        {mockGroups.map((group) => (
+          <View key={group.id} style={styles.groupItem}>
+            <View style={styles.groupInfo}>
+              <Text style={styles.groupIcon}>💬</Text>
+              <View>
+                <Text style={styles.groupName}>{group.name}</Text>
+                <Text style={styles.groupTime}>最后活跃: {group.lastActive}</Text>
+              </View>
+            </View>
+            {group.newFiles > 0 && (
+              <View style={styles.badge}>
+                <Text style={styles.badgeText}>{group.newFiles}个新文件</Text>
+              </View>
+            )}
+          </View>
+        ))}
+      </View>
+
+      {/* 检测到的文件 */}
+      <View style={styles.section}>
+        <Text style={styles.sectionTitle}>检测到的文件 ({mockFiles.length})</Text>
+        {mockFiles.map((file) => (
+          <View key={file.id} style={styles.fileItem}>
+            <Text style={styles.fileIcon}>📄</Text>
+            <View style={styles.fileInfo}>
+              <Text style={styles.fileName}>{file.name}</Text>
+              <Text style={styles.fileMeta}>{file.group} · {file.size}</Text>
+            </View>
+            <Text style={styles.fileTime}>{file.time}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Python后端提示 */}
+      <View style={styles.pythonHint}>
+        <Text style={styles.pythonHintTitle}>⚠️ 需要 Python 后端</Text>
+        <Text style={styles.pythonHintText}>
+          微信自动化需要运行 Python 后端服务。请在本地运行 wechat_monitor.py
+        </Text>
+        <TouchableOpacity style={styles.pythonBtn}>
+          <Text style={styles.pythonBtnText}>查看 Python 代码</Text>
+        </TouchableOpacity>
+      </View>
+    </ScrollView>
+  );
+}
+
 function HomeScreen({ navigation }: any) {
   return (
     <ScrollView style={styles.screen}>
       <View style={styles.hero}>
         <Text style={styles.heroTitle}>智能生活，触手可及</Text>
-        <Text style={styles.heroSubtitle}>整合 9 大功能模块，AI 驱动的生活效率工具</Text>
+        <Text style={styles.heroSubtitle}>整合 10 大功能模块，AI 驱动的生活效率工具</Text>
       </View>
       <View style={styles.moduleGrid}>
         {modules.map((module) => (
@@ -338,6 +452,7 @@ export default function App() {
           component={HomeScreen}
           options={{ title: '智能生活助手' }}
         />
+        <Stack.Screen name="wechat" component={WeChatScreen} options={{ title: '微信监控' }} />
         <Stack.Screen name="document" component={DocumentScreen} options={{ title: '文档整理' }} />
         <Stack.Screen name="call" component={CallRecordScreen} options={{ title: '通话录音' }} />
         <Stack.Screen name="footprint" component={FootprintScreen} options={{ title: '足迹记录' }} />

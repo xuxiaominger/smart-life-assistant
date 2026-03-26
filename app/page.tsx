@@ -23,6 +23,13 @@ import {
   Sun,
   Lightbulb,
   MessageCircle,
+  MessageSquare,
+  Play,
+  Pause,
+  Settings,
+  FolderOpen,
+  Users,
+  AlertCircle,
 } from "lucide-react";
 
 // 模拟数据
@@ -76,6 +83,30 @@ const moodPrompts = [
   "今天让你感到最有成就感的事情是什么？",
   "有没有什么事情让你感到焦虑？",
   "工作中有遇到什么挑战吗？",
+];
+
+// 微信自动化模块数据
+const mockWeChatGroups = [
+  { id: 1, name: "项目交流群", newFiles: 3, lastActive: "10分钟前" },
+  { id: 2, name: "法律资源共享", newFiles: 5, lastActive: "30分钟前" },
+  { id: 3, name: "同事群", newFiles: 1, lastActive: "1小时前" },
+  { id: 4, name: "客户沟通群", newFiles: 2, lastActive: "2小时前" },
+];
+
+const mockWeChatFiles = [
+  { id: 1, group: "项目交流群", name: "需求文档.pdf", type: "pdf", size: "2.3MB", time: "今天 10:30" },
+  { id: 2, group: "法律资源共享", name: "案例分析.zip", type: "archive", size: "15MB", time: "今天 10:15" },
+  { id: 3, group: "项目交流群", name: "设计稿.png", type: "image", size: "3.2MB", time: "今天 09:45" },
+  { id: 4, group: "法律资源共享", name: "合同模板.docx", type: "doc", size: "156KB", time: "今天 09:20" },
+  { id: 5, group: "同事群", name: "会议纪要.pdf", type: "pdf", size: "890KB", time: "昨天 18:30" },
+];
+
+const mockWeChatLogs = [
+  { id: 1, time: "10:35:22", action: "检测到新文件", detail: "需求文档.pdf", status: "success" },
+  { id: 2, time: "10:35:20", action: "切换群聊", detail: "法律资源共享", status: "info" },
+  { id: 3, time: "10:35:18", action: "自动下载", detail: "案例分析.zip", status: "success" },
+  { id: 4, time: "10:35:15", action: "检测到新文件", detail: "设计稿.png", status: "success" },
+  { id: 5, time: "10:35:10", action: "开始监控", detail: "4个群聊", status: "info" },
 ];
 
 // 模块组件
@@ -342,14 +373,196 @@ function MoodJournalModule() {
   );
 }
 
+// 微信自动化模块
+function WeChatAutomationModule() {
+  const [isRunning, setIsRunning] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [monitoringGroups, setMonitoringGroups] = useState(mockWeChatGroups);
+  const [detectedFiles, setDetectedFiles] = useState(mockWeChatFiles);
+
+  const handleStart = () => {
+    setIsRunning(true);
+    setProgress(0);
+    // 模拟进度
+    const interval = setInterval(() => {
+      setProgress((p) => {
+        if (p >= 100) {
+          clearInterval(interval);
+          return 100;
+        }
+        return p + 10;
+      });
+    }, 500);
+  };
+
+  const handleStop = () => {
+    setIsRunning(false);
+    setProgress(0);
+  };
+
+  return (
+    <div className="bg-white rounded-3xl p-6 shadow-sm">
+      <div className="flex items-center justify-between mb-4">
+        <h3 className="text-xl font-semibold text-gray-900">微信群监控</h3>
+        <div className="flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full ${isRunning ? 'bg-green-500 animate-pulse' : 'bg-gray-300'}`} />
+          <span className="text-xs text-gray-500">{isRunning ? '监控中' : '已停止'}</span>
+        </div>
+      </div>
+
+      {/* 控制面板 */}
+      <div className="flex items-center gap-3 mb-6 p-4 bg-gray-50 rounded-2xl">
+        <button
+          onClick={isRunning ? handleStop : handleStart}
+          className={`flex items-center gap-2 px-4 py-2 rounded-xl font-medium transition-colors ${
+            isRunning
+              ? 'bg-red-500 hover:bg-red-600 text-white'
+              : 'bg-green-500 hover:bg-green-600 text-white'
+          }`}
+        >
+          {isRunning ? <><Pause className="w-4 h-4" /> 停止</> : <><Play className="w-4 h-4" /> 开始监控</>}
+        </button>
+
+        <div className="flex-1">
+          <div className="flex justify-between text-xs text-gray-500 mb-1">
+            <span>扫描进度</span>
+            <span>{progress}%</span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-green-500 to-blue-500 transition-all duration-300"
+              style={{ width: `${progress}%` }}
+            />
+          </div>
+        </div>
+
+        <button className="p-2 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors">
+          <Settings className="w-5 h-5 text-gray-600" />
+        </button>
+      </div>
+
+      {/* 监控群列表 */}
+      <div className="mb-6">
+        <div className="flex items-center justify-between mb-3">
+          <h4 className="font-medium text-gray-900 flex items-center gap-2">
+            <Users className="w-4 h-4" />
+            监控群列表 ({monitoringGroups.length})
+          </h4>
+          <button className="text-xs text-blue-500 hover:text-blue-600">+ 添加群</button>
+        </div>
+        <div className="space-y-2">
+          {monitoringGroups.map((group) => (
+            <div key={group.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                  <MessageSquare className="w-4 h-4 text-blue-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900">{group.name}</p>
+                  <p className="text-xs text-gray-400">最后活跃: {group.lastActive}</p>
+                </div>
+              </div>
+              {group.newFiles > 0 && (
+                <span className="px-2 py-1 bg-orange-100 text-orange-600 text-xs rounded-full">
+                  {group.newFiles} 个新文件
+                </span>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 检测到的文件 */}
+      <div className="mb-6">
+        <h4 className="font-medium text-gray-900 flex items-center gap-2 mb-3">
+          <FolderOpen className="w-4 h-4" />
+          检测到的文件 ({detectedFiles.length})
+        </h4>
+        <div className="space-y-2 max-h-48 overflow-y-auto">
+          {detectedFiles.map((file) => (
+            <div key={file.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                  file.type === 'pdf' ? 'bg-red-100' :
+                  file.type === 'doc' ? 'bg-blue-100' :
+                  file.type === 'image' ? 'bg-green-100' :
+                  'bg-purple-100'
+                }`}>
+                  <FileText className={`w-4 h-4 ${
+                    file.type === 'pdf' ? 'text-red-600' :
+                    file.type === 'doc' ? 'text-blue-600' :
+                    file.type === 'image' ? 'text-green-600' :
+                    'text-purple-600'
+                  }`} />
+                </div>
+                <div>
+                  <p className="font-medium text-gray-900 text-sm">{file.name}</p>
+                  <p className="text-xs text-gray-400">{file.group} · {file.size}</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">{file.time}</span>
+                <button className="text-xs text-blue-500 hover:text-blue-600">下载</button>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* 操作日志 */}
+      <div>
+        <h4 className="font-medium text-gray-900 flex items-center gap-2 mb-3">
+          <AlertCircle className="w-4 h-4" />
+          操作日志
+        </h4>
+        <div className="bg-gray-900 rounded-xl p-3 max-h-32 overflow-y-auto">
+          {mockWeChatLogs.map((log) => (
+            <div key={log.id} className="flex items-start gap-2 text-xs mb-2">
+              <span className="text-gray-500 font-mono">{log.time}</span>
+              <span className={`px-1.5 py-0.5 rounded ${
+                log.status === 'success' ? 'bg-green-900 text-green-400' :
+                log.status === 'error' ? 'bg-red-900 text-red-400' :
+                'bg-blue-900 text-blue-400'
+              }`}>
+                {log.action}
+              </span>
+              <span className="text-gray-300">{log.detail}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Python 后端提示 */}
+      <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl border border-purple-100">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Sparkles className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900">需要 Python 后端支持</h4>
+            <p className="text-sm text-gray-500 mt-1">
+              微信自动化需要运行 Python 后端服务，使用 win32api + UIAutomation 控制微信窗口。
+              请在本地运行 <code className="bg-gray-100 px-1 rounded">wechat_monitor.py</code>。
+            </p>
+            <button className="mt-2 text-sm text-purple-600 hover:text-purple-700 font-medium">
+              查看 Python 代码 →
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // 主页面
 export default function HomePage() {
   const [activeModule, setActiveModule] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const modules = [
+    { id: 'wechat', name: '微信监控', icon: MessageSquare, color: 'bg-green-500' },
     { id: 'document', name: '文档整理', icon: FileText, color: 'bg-blue-500' },
-    { id: 'call', name: '通话录音', icon: Phone, color: 'bg-green-500' },
+    { id: 'call', name: '通话录音', icon: Phone, color: 'bg-green-600' },
     { id: 'footprint', name: '足迹记录', icon: MapPin, color: 'bg-purple-500' },
     { id: 'video', name: '短视频', icon: Video, color: 'bg-orange-500' },
     { id: 'legal', name: '法律分析', icon: Scale, color: 'bg-red-500' },
@@ -395,7 +608,7 @@ export default function HomePage() {
               智能生活，触手可及
             </h2>
             <p className="text-xl text-gray-500 max-w-2xl mx-auto">
-              整合 9 大功能模块，AI 驱动的生活效率工具
+              整合 10 大功能模块，AI 驱动的生活效率工具
             </p>
           </motion.div>
 
@@ -450,6 +663,7 @@ export default function HomePage() {
                 exit={{ opacity: 0, scale: 0.95 }}
                 className="md:col-span-2 lg:col-span-3"
               >
+                {activeModule === 'wechat' && <WeChatAutomationModule />}
                 {activeModule === 'document' && <DocumentModule />}
                 {activeModule === 'call' && <CallRecordModule />}
                 {activeModule === 'footprint' && <FootprintModule />}
