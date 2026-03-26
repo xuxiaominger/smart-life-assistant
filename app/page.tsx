@@ -30,6 +30,11 @@ import {
   FolderOpen,
   Users,
   AlertCircle,
+  Camera,
+  Upload,
+  Download,
+  FileImage,
+  Loader2,
 } from "lucide-react";
 
 // 模拟数据
@@ -111,12 +116,150 @@ const mockWeChatLogs = [
 
 // 模块组件
 function DocumentModule() {
+  const [isOCRProcessing, setIsOCRProcessing] = useState(false);
+  const [ocrResult, setOcrResult] = useState<string | null>(null);
+  const [ocrMode, setOcrMode] = useState<'free_ocr' | 'document' | 'image_analysis'>('document');
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+
+  const handleOCR = async (file: File) => {
+    setIsOCRProcessing(true);
+    setSelectedFile(file.name);
+    setOcrResult(null);
+
+    try {
+      // 将文件转换为 base64
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        const base64 = (e.target?.result as string)?.split(',')[1];
+
+        // 调用 OCR API
+        const response = await fetch('/api/ocr', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            base64Image: base64,
+            mode: ocrMode,
+            prompt: ocrMode === 'document' ? 'Convert the document to markdown' : 'Free OCR',
+          }),
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          setOcrResult(result.markdown || result.text);
+        } else {
+          setOcrResult(`OCR 识别失败: ${result.error}`);
+        }
+
+        setIsOCRProcessing(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      setOcrResult('OCR 处理失败，请重试');
+      setIsOCRProcessing(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleOCR(file);
+    }
+  };
+
+  const clearOCRResult = () => {
+    setOcrResult(null);
+    setSelectedFile(null);
+  };
+
   return (
     <div className="bg-white rounded-3xl p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-xl font-semibold text-gray-900">文档智能整理</h3>
-        <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full">AI 已处理</span>
+        <span className="text-xs bg-blue-100 text-blue-600 px-3 py-1 rounded-full flex items-center gap-1">
+          <Sparkles className="w-3 h-3" />
+          DeepSeek-OCR
+        </span>
       </div>
+
+      {/* OCR 上传区域 */}
+      <div className="mb-6 p-6 bg-gradient-to-r from-blue-50 to-purple-50 rounded-2xl border-2 border-dashed border-blue-200">
+        <div className="text-center">
+          {isOCRProcessing ? (
+            <div className="py-4">
+              <Loader2 className="w-10 h-10 text-blue-500 animate-spin mx-auto mb-2" />
+              <p className="text-sm text-gray-600">正在使用 DeepSeek-OCR 识别中...</p>
+              <p className="text-xs text-gray-400 mt-1">文件: {selectedFile}</p>
+            </div>
+          ) : (
+            <>
+              <Camera className="w-10 h-10 text-blue-400 mx-auto mb-2" />
+              <p className="text-sm text-gray-700 mb-3">上传图片或 PDF 进行 OCR 识别</p>
+
+              <div className="flex justify-center gap-2 mb-3">
+                {(['free_ocr', 'document', 'image_analysis'] as const).map((mode) => (
+                  <button
+                    key={mode}
+                    onClick={() => setOcrMode(mode)}
+                    className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                      ocrMode === mode
+                        ? 'bg-blue-500 text-white'
+                        : 'bg-white text-gray-600 border border-gray-200'
+                    }`}
+                  >
+                    {mode === 'free_ocr' ? '自由识别' : mode === 'document' ? '文档转换' : '图片分析'}
+                  </button>
+                ))}
+              </div>
+
+              <label className="inline-flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-xl cursor-pointer hover:bg-blue-600 transition-colors">
+                <Upload className="w-4 h-4" />
+                选择文件识别
+                <input
+                  type="file"
+                  accept="image/*,.pdf"
+                  onChange={handleFileSelect}
+                  className="hidden"
+                />
+              </label>
+
+              <p className="text-xs text-gray-400 mt-2">支持 PNG、JPG、PDF 格式</p>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* OCR 结果显示 */}
+      {ocrResult && (
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <h4 className="font-medium text-gray-900 flex items-center gap-2">
+              <FileImage className="w-4 h-4 text-purple-500" />
+              OCR 识别结果
+            </h4>
+            <button
+              onClick={clearOCRResult}
+              className="text-xs text-gray-400 hover:text-gray-600"
+            >
+              清空
+            </button>
+          </div>
+          <div className="bg-gray-900 rounded-2xl p-4 max-h-64 overflow-y-auto">
+            <pre className="text-sm text-gray-100 whitespace-pre-wrap font-mono">
+              {ocrResult}
+            </pre>
+          </div>
+          <div className="flex items-center justify-between mt-2 text-xs text-gray-500">
+            <span>Powered by DeepSeek-OCR</span>
+            <button className="flex items-center gap-1 text-blue-500 hover:text-blue-600">
+              <Download className="w-3 h-3" />
+              导出 Markdown
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* 文档列表 */}
       <div className="space-y-3">
         {mockDocuments.map((doc) => (
           <div key={doc.id} className="p-4 bg-gray-50 rounded-2xl hover:bg-gray-100 transition-colors cursor-pointer">
@@ -133,6 +276,27 @@ function DocumentModule() {
             <p className="mt-2 text-sm text-gray-600">{doc.summary}</p>
           </div>
         ))}
+      </div>
+
+      {/* DeepSeek-OCR 说明 */}
+      <div className="mt-6 p-4 bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl border border-purple-100">
+        <div className="flex items-start gap-3">
+          <div className="w-10 h-10 bg-purple-100 rounded-xl flex items-center justify-center flex-shrink-0">
+            <Brain className="w-5 h-5 text-purple-600" />
+          </div>
+          <div>
+            <h4 className="font-medium text-gray-900">DeepSeek-OCR 集成</h4>
+            <p className="text-sm text-gray-500 mt-1">
+              使用 DeepSeek-OCR 进行高精度文字识别，支持 PDF 文档转换和图片 OCR。
+              需要在本地运行 <code className="bg-gray-100 px-1 rounded">deepseek_ocr.py</code>。
+            </p>
+            <div className="flex gap-2 mt-2">
+              <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">GPU 加速</span>
+              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded">~2500 tokens/s</span>
+              <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">多语言</span>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
