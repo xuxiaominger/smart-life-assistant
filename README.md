@@ -1,17 +1,21 @@
 # 智能生活助手 (Smart Life Assistant)
 
-一款整合9大功能模块的AI驱动生活效率工具，参照苹果官网风格设计UI，同时提供HTTP网页版和APP移动版。
+一款整合10大功能模块的AI驱动生活效率工具，参照苹果官网风格设计UI，同时提供HTTP网页版和APP移动版。
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black)
 ![React Native](https://img.shields.io/badge/React%20Native-0.76-61DAFB)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6)
+![DeepSeek-OCR](https://img.shields.io/badge/DeepSeek--OCR-Integrated-purple)
 
 ## 功能特性
 
-### 1. 📄 文档智能整理
-- 微信收到的图片和PDF使用OCR扫描后AI自动归纳要点
-- 压缩包提取文件名生成Markdown清单
-- Word文档AI自动归纳要点
+### 1. 📄 文档智能整理 (DeepSeek-OCR)
+- **DeepSeek-OCR 集成** - 高精度文字识别
+- 支持图片 OCR (PNG、JPG、JPEG)
+- 支持 PDF 文档批量识别
+- 三种识别模式：自由识别 / 文档转换 / 图片分析
+- 自动转换为 Markdown 格式
+- GPU 加速，~2500 tokens/s 处理速度
 
 ### 2. 📞 通话录音识别
 - 小米手机通话录音转文字
@@ -45,6 +49,13 @@
 - 苹果官网设计风格
 - HTTP网页版 + APP移动版双版本
 
+### 10. 💬 微信群监控自动化
+- 自动监控微信群文件消息
+- 支持 PDF、Word、Excel、图片、压缩包检测
+- 自动下载并整理文件
+- Python win32api + UIAutomation 后端支持
+- PyQt6 现代 GUI 界面
+
 ## 技术栈
 
 ### HTTP 版本
@@ -66,7 +77,10 @@ smart-life-assistant/
 ├── app/                    # Next.js App Router (HTTP版本)
 │   ├── page.tsx            # 主页
 │   ├── layout.tsx          # 布局
-│   └── globals.css         # 全局样式
+│   ├── globals.css         # 全局样式
+│   └── api/
+│       └── ocr/            # OCR API 接口
+│           └── route.ts
 ├── mobile/                 # React Native (APP版本)
 │   ├── App.tsx             # 主应用
 │   ├── app.json            # Expo配置
@@ -74,7 +88,9 @@ smart-life-assistant/
 ├── docs/                   # 工程文档
 │   ├── SPEC.md             # 需求规格文档
 │   ├── API.md              # 接口文档
-│   └── ARCHITECTURE.md     # 架构文档
+│   ├── ARCHITECTURE.md     # 架构文档
+│   ├── deepseek_ocr.py     # DeepSeek-OCR Python 后端
+│   └── wechat_monitor.py   # 微信监控 Python 后端
 └── package.json            # 根依赖配置
 ```
 
@@ -113,6 +129,61 @@ npm run ios
 ```
 
 ## 配置说明
+
+### DeepSeek-OCR 配置
+
+DeepSeek-OCR 提供高精度文字识别功能，支持多种运行模式：
+
+#### 1. Python 后端运行 (推荐用于生产)
+
+```bash
+# 安装依赖
+pip install torch transformers pillow pymupdf PyQt6
+
+# 可选：安装 vLLM 加速 (需要 CUDA)
+pip install vllm>=0.8.5
+
+# 运行 GUI 模式
+cd docs
+python deepseek_ocr.py --gui
+
+# 处理单个文件
+python deepseek_ocr.py --file image.png
+python deepseek_ocr.py --file document.pdf
+
+# 选择模型大小
+python deepseek_ocr.py --model large --file image.png  # 高精度
+python deepseek_ocr.py --model tiny --file image.png   # 快速
+```
+
+#### 2. HTTP API 调用
+
+```bash
+# POST /api/ocr
+curl -X POST http://localhost:3000/api/ocr \
+  -H "Content-Type: application/json" \
+  -d '{
+    "base64Image": "...",
+    "mode": "document",
+    "prompt": "Convert the document to markdown"
+  }'
+```
+
+#### 3. OCR 模式说明
+
+| 模式 | 说明 | 适用场景 |
+|------|------|----------|
+| `free_ocr` | 自由识别 | 通用图片文字提取 |
+| `document` | 文档转换 | PDF/文档转 Markdown |
+| `image_analysis` | 图片分析 | 详细描述图片内容 |
+
+### 微信监控配置
+
+```bash
+# 运行微信监控后端 (需要 Windows)
+cd docs
+python wechat_monitor.py
+```
 
 ### AI 服务配置
 
@@ -167,6 +238,8 @@ eas build
 - [需求规格说明书](./docs/SPEC.md)
 - [API接口文档](./docs/API.md)
 - [架构设计文档](./docs/ARCHITECTURE.md)
+- [DeepSeek-OCR 后端](./docs/deepseek_ocr.py)
+- [微信监控后端](./docs/wechat_monitor.py)
 
 ## 注意事项
 
