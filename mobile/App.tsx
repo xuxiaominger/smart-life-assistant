@@ -74,12 +74,81 @@ const modules = [
 ];
 
 function DocumentScreen() {
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [ocrResult, setOcrResult] = useState<string | null>(null);
+
+  // 模拟 OCR 处理
+  const handleOCR = () => {
+    setIsProcessing(true);
+    setOcrResult(null);
+
+    // 模拟异步处理
+    setTimeout(() => {
+      setOcrResult(`# 图片文字识别结果
+
+## 识别内容
+智能生活助手 - Smart Life Assistant
+基于 DeepSeek-OCR 的文字识别系统
+
+## 识别详情
+- 状态: 成功
+- 置信度: 98.5%
+- 语言: 中文简体
+
+## 技术说明
+使用 DeepSeek-OCR 进行高精度文字识别，
+支持图片和 PDF 文档的 OCR 处理。`);
+
+      setIsProcessing(false);
+    }, 2000);
+  };
+
   return (
     <ScrollView style={styles.screen}>
       <View style={styles.card}>
-        <Text style={styles.cardTitle}>文档智能整理</Text>
-        <Text style={styles.tag}>AI 已处理</Text>
+        <View style={styles.cardHeader}>
+          <Text style={styles.cardTitle}>文档智能整理</Text>
+          <View style={styles.ocrBadge}>
+            <Text style={styles.ocrBadgeText}>DeepSeek-OCR</Text>
+          </View>
+        </View>
       </View>
+
+      {/* OCR 上传区域 */}
+      <View style={styles.ocrCard}>
+        {isProcessing ? (
+          <View style={styles.processingContainer}>
+            <Text style={styles.processingText}>正在使用 DeepSeek-OCR 识别中...</Text>
+          </View>
+        ) : (
+          <>
+            <Text style={styles.ocrIcon}>📷</Text>
+            <Text style={styles.ocrTitle}>上传图片或 PDF 进行 OCR 识别</Text>
+            <TouchableOpacity
+              style={styles.ocrButton}
+              onPress={handleOCR}
+            >
+              <Text style={styles.ocrButtonText}>选择文件识别</Text>
+            </TouchableOpacity>
+            <Text style={styles.ocrHint}>支持 PNG、JPG、PDF 格式</Text>
+          </>
+        )}
+      </View>
+
+      {/* OCR 结果显示 */}
+      {ocrResult && (
+        <View style={styles.resultCard}>
+          <View style={styles.resultHeader}>
+            <Text style={styles.resultTitle}>OCR 识别结果</Text>
+            <TouchableOpacity onPress={() => setOcrResult(null)}>
+              <Text style={styles.clearButton}>清空</Text>
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.resultContent}>{ocrResult}</Text>
+        </View>
+      )}
+
+      {/* 文档列表 */}
       {mockDocuments.map((doc) => (
         <View key={doc.id} style={styles.itemCard}>
           <View style={styles.itemHeader}>
@@ -511,12 +580,11 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: '#FFF',
-    margin: 16,
+    marginHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 8,
     padding: 20,
     borderRadius: 20,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
   },
   cardTitle: {
     fontSize: 18,
@@ -821,5 +889,95 @@ const styles = StyleSheet.create({
     color: '#AEAEB2',
     marginTop: 16,
     marginBottom: 32,
+  },
+  // OCR 样式
+  cardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    width: '100%',
+  },
+  ocrBadge: {
+    backgroundColor: '#E8E5FF',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+  },
+  ocrBadgeText: {
+    fontSize: 10,
+    color: '#5856D6',
+    fontWeight: '600',
+  },
+  ocrCard: {
+    backgroundColor: '#F0F0FF',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 24,
+    borderRadius: 16,
+    borderWidth: 2,
+    borderColor: '#E0E0FF',
+    borderStyle: 'dashed',
+    alignItems: 'center',
+  },
+  ocrIcon: {
+    fontSize: 40,
+    marginBottom: 12,
+  },
+  ocrTitle: {
+    fontSize: 14,
+    color: '#1D1D1F',
+    marginBottom: 16,
+  },
+  ocrButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 24,
+    paddingVertical: 12,
+    borderRadius: 12,
+    marginBottom: 8,
+  },
+  ocrButtonText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  ocrHint: {
+    fontSize: 12,
+    color: '#86868B',
+  },
+  processingContainer: {
+    paddingVertical: 20,
+    alignItems: 'center',
+  },
+  processingText: {
+    fontSize: 14,
+    color: '#007AFF',
+  },
+  resultCard: {
+    backgroundColor: '#1C1C1E',
+    marginHorizontal: 16,
+    marginBottom: 16,
+    padding: 16,
+    borderRadius: 16,
+  },
+  resultHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  resultTitle: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#FFF',
+  },
+  clearButton: {
+    fontSize: 12,
+    color: '#86868B',
+  },
+  resultContent: {
+    fontSize: 12,
+    color: '#E5E5EA',
+    fontFamily: 'monospace',
+    lineHeight: 18,
   },
 });
